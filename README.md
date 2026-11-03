@@ -52,7 +52,7 @@ dsh 里一个 agent 跑长任务，人只能等。切出去开网页游戏又会
 
 ## 安装
 
-**从插件市场**：本插件已按 Open Plugin Market 的收录格式准备（`dsh-plugin` 关键词、`dsh.bundle` 清单、`engines.dsh`），收录后可在市场面板直接搜 **2048** 安装。
+**从插件市场**：已提交 [Open Plugin Market](https://dshopen.org/zh/)（索引仓库 [polang233/dsh-plugin-index](https://github.com/polang233/dsh-plugin-index)）收录审核，通过后可在市场面板搜 **2048** 直接安装。
 
 **从本地目录**（当前可用方式）：
 
