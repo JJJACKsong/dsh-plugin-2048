@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "2048 Game",
+    "description": "A 2048 board reachable from the sidebar, for the wait while an agent runs a task. Arrow keys / WASD / swipe, undo, and a best-score record."
+  }
+}
