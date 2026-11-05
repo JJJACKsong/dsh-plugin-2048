@@ -52,17 +52,22 @@ dsh 里一个 agent 跑长任务，人只能等。切出去开网页游戏又会
 
 ## 安装
 
-**从插件市场**：已提交 [Open Plugin Market](https://dshopen.org/zh/)（索引仓库 [polang233/dsh-plugin-index](https://github.com/polang233/dsh-plugin-index)）收录审核，通过后可在市场面板搜 **2048** 直接安装。
+**从 npm（推荐）**：
 
-**从本地目录**（当前可用方式）：
+```bash
+dsh plugin --profile <profile> add dsh-plugin-2048
+```
+
+桌面版的 profile 由应用托管：用插件管理器 / 插件页按 npm 包名 `dsh-plugin-2048` 安装，或在 Discover / 市场面板搜 **2048** 直接装。
+
+**从插件市场**：已收录 [Open Plugin Market](https://dshopen.org/zh/)（[索引仓库](https://github.com/polang233/dsh-plugin-index)），市场面板搜 **2048** 即可。
+
+**从本地目录**（离线或改代码时）：
 
 ```bash
 git clone https://github.com/JJJACKsong/dsh-plugin-2048.git
-cd dsh-plugin-2048
-# 让 dsh 用这个目录作为 bundle 安装（桌面版的 profile 由桌面应用托管）：
-#   - 插件管理器 / 插件页 → 从本地目录安装，指向本目录；
-#   - 或者让 agent 调用 plugin_manager install_bundle，target 填本目录绝对路径；
-#   - 非桌面托管的 profile 也可：dsh plugin --profile <profile> add /abs/path/to/dsh-plugin-2048
+# 桌面版：插件管理器从本地目录安装，或让 agent 用 plugin_manager install_bundle（target 填绝对路径）
+dsh plugin --profile <profile> add /abs/path/to/dsh-plugin-2048
 ```
 
 装完即激活（HMR），侧边栏最下面多一个 **2048** 图标，点开就能玩。
