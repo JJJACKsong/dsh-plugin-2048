@@ -1,7 +1,7 @@
 {
   "name": "dsh-plugin-2048",
-  "version": "0.4.1",
-  "description": "DeepSeek Harness 侧边栏 2048：4×4–9×9、连击、音效、按尺寸续局、每日挑战、战绩成就，会话完成/卡点时游戏内提示。",
+  "version": "0.5.0",
+  "description": "DeepSeek Harness 侧边栏 2048：4×4–9×9、AUTO 托管（内置 AI）、连击与形变动画/动态模糊、每日挑战、战绩成就，会话完成或卡点时游戏内提醒。",
   "type": "module",
   "main": "lib/index.js",
   "exports": {

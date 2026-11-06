@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "2048 Game",
-    "description": "A 2048 board in the sidebar: 4x4 to 9x9, combo bonus, undo, sound, daily challenge, history and achievements — plus an in-game notice when a session finishes or is waiting on you."
+    "description": "A 2048 board in the sidebar: 4x4 to 9x9, an AUTO pilot with a built-in expectimax AI, combo bonus, undo, sound, daily challenge, history and achievements — plus an in-game notice when a session finishes or is waiting on you."
   }
 }

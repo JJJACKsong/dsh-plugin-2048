@@ -28,6 +28,7 @@ const api = new Function(region + '\n' + achvBlock + `
     SIZES, WIN_TILE, gapForSize, nextRandom, seedFrom, emptyGrid, normalizeSize, lineIndices, pickSpawn,
     resetSeq, bumpSeq, nextTileId, createBoard, canMove, moveBoard, maxTileOf, snapshotOf,
     parkBoard, resumeBoard, elapsedOf, travelOf, dailySeedFor, ACHIEVEMENTS,
+    DIRECTIONS, shiftGrid, evaluateGrid, bestMove,
   }
 `)()
 
@@ -55,6 +56,7 @@ function stream(seed) {
 }
 
 const DIRS = ['left', 'right', 'up', 'down']
+let idSeed = 0
 
 /** 用数字矩阵造棋盘（0 = 空）。 */
 function boardFrom(rows, rngState) {
@@ -539,6 +541,95 @@ test('每个尺寸各 120 局随机对局：不变量始终成立', () => {
       previousSteps = board.steps
     }
   }
+})
+
+// ── AI / AUTO 托管 ─────────────────────────────────────────────────────────
+test('shiftGrid：纯模拟不发新子，也不消耗棋子 id', () => {
+  const board = boardFrom([[2, 2, 4, 0], EMPTY4, EMPTY4, EMPTY4])
+  api.resetSeq()
+  const before = JSON.stringify(board.grid)
+  const shift = api.shiftGrid(board, 'left', true)
+  assert.equal(shift.moved, true)
+  assert.deepEqual(shift.grid.filter(Boolean).map((tile) => tile.value), [4, 4], '合并结果正确')
+  assert.equal(shift.pairs, 1)
+  assert.equal(shift.gained, 4)
+  assert.equal(JSON.stringify(board.grid), before, '不改原棋盘')
+  assert.equal(shift.grid.filter(Boolean).length, 2, '没有发新棋子')
+  assert.equal(api.nextTileId(), 1, '模拟不消耗 id')
+})
+
+test('shiftGrid：无效方向返回 moved=false 且原样棋盘', () => {
+  const board = boardFrom([[2, 4, 8, 16], EMPTY4, EMPTY4, EMPTY4])
+  const shift = api.shiftGrid(board, 'left', true)
+  assert.equal(shift.moved, false)
+  assert.equal(shift.grid, board.grid)
+})
+
+test('evaluateGrid：空格越多分越高，大块在角上更优', () => {
+  const full = boardFrom([
+    [2, 4, 2, 4],
+    [4, 2, 4, 2],
+    [2, 4, 2, 4],
+    [4, 2, 4, 2],
+  ])
+  const roomy = boardFrom([[2, 0, 0, 0], EMPTY4, EMPTY4, EMPTY4])
+  assert.ok(api.evaluateGrid(roomy.grid, 4) > api.evaluateGrid(full.grid, 4), '空位多应更优')
+
+  const corner = boardFrom([[1024, 2, 0, 0], [4, 8, 0, 0], EMPTY4, EMPTY4])
+  const middle = boardFrom([[2, 1024, 0, 0], [4, 8, 0, 0], EMPTY4, EMPTY4])
+  assert.ok(api.evaluateGrid(corner.grid, 4) > api.evaluateGrid(middle.grid, 4), '大块靠角应更优')
+})
+
+test('bestMove：只剩一个方向可走时选它', () => {
+  api.resetSeq()
+  const grid = api.emptyGrid(4)
+  const rows = [[2, 4, 8, 0], [4, 8, 16, 0], [8, 16, 32, 0], [16, 32, 64, 0]]
+  rows.forEach((row, r) => row.forEach((value, c) => {
+    if (value) grid[r * 4 + c] = { id: ++idSeed, value }
+  }))
+  const pick = api.bestMove({ size: 4, grid, score: 0, steps: 0, combo: 0, maxCombo: 0, rngState: 1 }, { depth: 2, nodeBudget: 500 })
+  assert.equal(pick.dir, 'right', '只有右移有效')
+})
+
+test('bestMove：无路可走时返回 null', () => {
+  const board = boardFrom([
+    [2, 4, 2, 4],
+    [4, 2, 4, 2],
+    [2, 4, 2, 4],
+    [4, 2, 4, 2],
+  ])
+  const pick = api.bestMove(board, { depth: 2, nodeBudget: 300 })
+  assert.equal(pick.dir, null)
+})
+
+test('bestMove：任何局面都返回合法方向，且节点预算有界', () => {
+  const random = stream(2026)
+  let board = api.createBoard({ size: 4, seed: 7, now: 1 })
+  for (let i = 0; i < 40; i += 1) {
+    if (board.over) break
+    const pick = api.bestMove(board, { depth: 3, nodeBudget: 1200 })
+    assert.ok(pick.dir === null || api.moveBoard(board, pick.dir).moved, '方向必须可走')
+    assert.ok(pick.nodes <= 1200 + 4 * 16 * 2 * 4, '节点数不应远超预算：' + pick.nodes)
+    if (!pick.dir) break
+    const result = api.moveBoard(board, pick.dir)
+    if (!result.moved) break
+    board = result.board
+  }
+})
+
+test('AUTO 代打 200 步：不出错、能推进（不死在第一步）', () => {
+  let board = api.createBoard({ size: 4, seed: 11, now: 1 })
+  let moves = 0
+  for (let i = 0; i < 200 && !board.over; i += 1) {
+    const pick = api.bestMove(board, { depth: 3, nodeBudget: 2500 })
+    if (!pick.dir) break
+    const result = api.moveBoard(board, pick.dir)
+    if (!result.moved) break
+    board = result.board
+    moves += 1
+  }
+  assert.ok(moves > 20, 'AUTO 至少走了 20 步：' + moves)
+  assert.ok(api.maxTileOf(board) >= 64, 'AUTO 应能把块做起来：' + api.maxTileOf(board))
 })
 
 // ── 成就判定 ───────────────────────────────────────────────────────────────
