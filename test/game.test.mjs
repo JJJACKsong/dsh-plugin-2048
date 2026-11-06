@@ -27,7 +27,7 @@ const api = new Function(region + '\n' + achvBlock + `
   return {
     SIZES, WIN_TILE, nextRandom, seedFrom, emptyGrid, normalizeSize, lineIndices, pickSpawn,
     resetSeq, bumpSeq, nextTileId, createBoard, canMove, moveBoard, maxTileOf, snapshotOf,
-    dailySeedFor, ACHIEVEMENTS,
+    parkBoard, resumeBoard, elapsedOf, dailySeedFor, ACHIEVEMENTS,
   }
 `)()
 
@@ -381,6 +381,45 @@ test('snapshotOf 不被后续移动改写', () => {
   assert.equal(snapshot.score, 0)
   assert.equal(snapshot.grid, before.grid, '快照引用原棋盘')
   assert.equal(snapshot.startedAt, 1000)
+})
+
+// ── 尺寸切换：停表与续局 ──────────────────────────────────────────────────
+test('parkBoard 停表：把当前这一段计入 elapsedMs', () => {
+  const board = { ...boardFrom(BLANK4), startedAt: 1000, elapsedMs: 500 }
+  const parked = api.parkBoard(board, 4000)
+  assert.equal(parked.elapsedMs, 3500)
+  assert.equal(parked.startedAt, 0)
+  assert.equal(api.elapsedOf(parked, 9999), 3500, '停表后不再走')
+})
+
+test('resumeBoard 重新走表，累计时间不丢', () => {
+  // 1000→4000 先走 3 秒并停表；10000 再开表，到 12000 共 5 秒
+  const parked = api.parkBoard({ ...boardFrom(BLANK4), startedAt: 1000, elapsedMs: 0 }, 4000)
+  assert.equal(parked.elapsedMs, 3000)
+  const resumed = api.resumeBoard(parked, 10000)
+  assert.equal(resumed.startedAt, 10000)
+  assert.equal(api.elapsedOf(resumed, 12000), 5000, '3 秒第一段 + 2 秒第二段')
+  assert.equal(api.parkBoard(resumed, 12000).elapsedMs, 5000)
+})
+
+test('已结束的棋局不重新走表', () => {
+  const over = { ...boardFrom(BLANK4), over: true, startedAt: 1000, endedAt: 3500, elapsedMs: 0 }
+  assert.equal(api.parkBoard(over, 9000), over, '终局原地不动')
+  assert.equal(api.resumeBoard(over, 9000), over)
+  assert.equal(api.elapsedOf(over, 99999), 2500)
+})
+
+test('两个尺寸槽互不影响（模拟切尺寸）', () => {
+  const four = { ...boardFrom(BLANK4), startedAt: 1000 }
+  // 存档里的槽都是停表状态（startedAt = 0），切过去才重新走表
+  const fiveParked = api.parkBoard(api.createBoard({ size: 5, seed: 5, now: 2000 }), 3000)
+  const parked = { 4: api.parkBoard(four, 5000), 5: api.resumeBoard(fiveParked, 5000) }
+  assert.equal(parked[4].size, 4)
+  assert.equal(parked[5].size, 5)
+  assert.equal(parked[4].steps, 0)
+  assert.equal(parked[5].startedAt, 5000)
+  assert.equal(parked[4].startedAt, 0, '4×4 那槽停表')
+  assert.equal(api.elapsedOf(parked[5], 6000), 1000 + 1000, '5×5 只算自己的时间')
 })
 
 // ── 长局不变量 ─────────────────────────────────────────────────────────────

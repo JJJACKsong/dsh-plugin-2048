@@ -1,7 +1,7 @@
 {
   "name": "dsh-plugin-2048",
-  "version": "0.3.0",
-  "description": "DeepSeek Harness 侧边栏 2048：连击、音效、5×5、每日挑战、战绩成就，以及会话完成/卡点时的游戏内提示。",
+  "version": "0.3.1",
+  "description": "DeepSeek Harness 侧边栏 2048：连击、音效、4×4/5×5 各自续局、每日挑战、战绩成就，会话完成/卡点时游戏内提示。",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
