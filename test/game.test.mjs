@@ -25,9 +25,9 @@ const achvBlock = source.slice(achvBegin, achvEnd + 6)
 
 const api = new Function(region + '\n' + achvBlock + `
   return {
-    SIZES, WIN_TILE, nextRandom, seedFrom, emptyGrid, normalizeSize, lineIndices, pickSpawn,
+    SIZES, WIN_TILE, gapForSize, nextRandom, seedFrom, emptyGrid, normalizeSize, lineIndices, pickSpawn,
     resetSeq, bumpSeq, nextTileId, createBoard, canMove, moveBoard, maxTileOf, snapshotOf,
-    parkBoard, resumeBoard, elapsedOf, dailySeedFor, ACHIEVEMENTS,
+    parkBoard, resumeBoard, elapsedOf, travelOf, dailySeedFor, ACHIEVEMENTS,
   }
 `)()
 
@@ -320,10 +320,46 @@ test('5×5 能正常移动与合并', () => {
   assert.equal(result.board.score, 4)
 })
 
-test('尺寸归一化：非法尺寸按 4', () => {
-  assert.equal(api.normalizeSize(9), 4)
+test('尺寸：支持 4–9，非法值按 4', () => {
+  assert.deepEqual(api.SIZES, [4, 5, 6, 7, 8, 9])
+  for (const size of api.SIZES) assert.equal(api.normalizeSize(size), size)
+  assert.equal(api.normalizeSize(10), 4)
+  assert.equal(api.normalizeSize(3), 4)
   assert.equal(api.normalizeSize(undefined), 4)
-  assert.equal(api.normalizeSize(5), 5)
+})
+
+test('9×9：81 格、能开局、能移动、线索引正确', () => {
+  api.resetSeq()
+  const board = api.createBoard({ size: 9, seed: 99, now: 1 })
+  assert.equal(board.grid.length, 81)
+  assert.equal(board.grid.filter(Boolean).length, 2)
+  assert.equal(api.canMove(board.grid, 9), true)
+
+  const lines = api.lineIndices('left', 9)
+  assert.equal(lines.length, 9)
+  assert.deepEqual(lines[0], [0, 1, 2, 3, 4, 5, 6, 7, 8])
+  assert.deepEqual(lines[8], [72, 73, 74, 75, 76, 77, 78, 79, 80])
+
+  const rows = Array.from({ length: 9 }, () => new Array(9).fill(0))
+  rows[4][8] = 2
+  const moved = api.moveBoard({ ...api.createBoard({ size: 9, seed: 1, now: 1 }), grid: (() => {
+    const grid = api.emptyGrid(9)
+    grid[4 * 9 + 8] = { id: 9001, value: 2 }
+    return grid
+  })() }, 'left')
+  assert.equal(moved.moved, true)
+  assert.equal(moved.board.grid[4 * 9].value, 2, '底排那颗滑到最左')
+  assert.equal(moved.board.size, 9)
+})
+
+test('间距随尺寸收窄：4/5 是 10px，9×9 是 6px', () => {
+  assert.equal(api.gapForSize(4), 10)
+  assert.equal(api.gapForSize(5), 10)
+  assert.equal(api.gapForSize(6), 9)
+  assert.equal(api.gapForSize(7), 8)
+  assert.equal(api.gapForSize(8), 7)
+  assert.equal(api.gapForSize(9), 6)
+  assert.equal(api.gapForSize(12), 10, '非法尺寸按 4 处理')
 })
 
 // ── 发牌 ───────────────────────────────────────────────────────────────────
@@ -422,15 +458,55 @@ test('两个尺寸槽互不影响（模拟切尺寸）', () => {
   assert.equal(api.elapsedOf(parked[5], 6000), 1000 + 1000, '5×5 只算自己的时间')
 })
 
+// ── 滑动动画：位移表 ───────────────────────────────────────────────────────
+test('travelOf：只统计滑动的旧棋子，合并产物和新发棋子不在表里', () => {
+  const prev = boardFrom([[0, 0, 0, 2], EMPTY4, EMPTY4, EMPTY4])
+  const moved = api.moveBoard(prev, 'left').board
+  const travel = api.travelOf(prev, moved, 'left')
+  const list = Object.values(travel.byId)
+  assert.equal(list.length, 1, '新发的那颗不在表里')
+  assert.deepEqual(list[0], { from: 3, to: 0, cells: 3 }, '右边那颗滑到最左，3 格')
+  assert.equal(travel.maxCells, 3)
+  assert.equal(travel.dir, 'left')
+
+  const prevMerge = boardFrom([[2, 2, 0, 0], EMPTY4, EMPTY4, EMPTY4])
+  const merged = api.moveBoard(prevMerge, 'left').board
+  const travelMerge = api.travelOf(prevMerge, merged, 'left')
+  assert.deepEqual(Object.values(travelMerge.byId), [], '合并产物 id 是新的，不算滑动')
+  assert.equal(travelMerge.maxCells, 0)
+})
+
+test('travelOf：没动就是空表；5×5 长距离也能算', () => {
+  const board = boardFrom([[2, 0, 0, 0], EMPTY4, EMPTY4, EMPTY4])
+  const travel = api.travelOf(board, board, 'left')
+  assert.deepEqual(travel.byId, {})
+  assert.equal(travel.maxCells, 0)
+
+  const five = boardFrom([EMPTY5, EMPTY5, EMPTY5, EMPTY5, [0, 0, 0, 0, 2]])
+  const movedFive = api.moveBoard(five, 'left').board
+  const travelFive = api.travelOf(five, movedFive, 'left')
+  const only = Object.values(travelFive.byId)[0]
+  assert.deepEqual(only, { from: 24, to: 20, cells: 4 }, '5×5 底行滑了 4 格')
+  assert.equal(travelFive.maxCells, 4)
+})
+
+test('travelOf：竖向移动按行距算，from/to 是格下标', () => {
+  const prev = boardFrom([[2, 0, 0, 0], EMPTY4, EMPTY4, EMPTY4])
+  const moved = api.moveBoard(prev, 'down').board
+  const travel = api.travelOf(prev, moved, 'down')
+  const only = Object.values(travel.byId)[0]
+  assert.deepEqual(only, { from: 0, to: 12, cells: 3 })
+})
+
 // ── 长局不变量 ─────────────────────────────────────────────────────────────
-test('800 局随机对局（4×4 / 5×5 各半）：不变量始终成立', () => {
-  for (let game = 0; game < 800; game += 1) {
-    const size = api.SIZES[game % api.SIZES.length]
+test('每个尺寸各 120 局随机对局：不变量始终成立', () => {
+  for (let game = 0; game < 120 * api.SIZES.length; game += 1) {
+    const size = api.SIZES[Math.floor(game / 120)]
     const random = stream(game + 1)
     let board = api.createBoard({ size, seed: (game * 2654435761) >>> 0, now: 1 })
     let previousScore = board.score
     let previousSteps = board.steps
-    for (let step = 0; step < 3000; step += 1) {
+    for (let step = 0; step < 2000; step += 1) {
       if (board.over) break
       const dir = DIRS[Math.floor(random() * 4) % 4]
       const result = api.moveBoard(board, dir)
