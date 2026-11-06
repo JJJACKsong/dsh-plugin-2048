@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "2048 Game",
-    "description": "A 2048 board reachable from the sidebar, for the wait while an agent runs a task. Arrow keys / WASD / swipe, undo, and a best-score record."
+    "description": "A 2048 board in the sidebar: 4x4 or 5x5, combo bonus, undo, sound, daily challenge, history and achievements — plus an in-game notice when a session finishes or is waiting on you."
   }
 }
