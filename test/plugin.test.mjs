@@ -54,7 +54,7 @@ function loadModule() {
   })
   assert.ok(mod && typeof mod.apply === 'function', 'factory 返回 { inject, apply }')
   assert.ok(Array.isArray(mod.inject) && mod.inject.includes('slots'), 'inject 声明了 slots')
-  return mod
+  return { mod, fakeWindow }
 }
 
 test('client.js 能在模块加载器桩下加载并返回 apply', () => {
@@ -62,7 +62,7 @@ test('client.js 能在模块加载器桩下加载并返回 apply', () => {
 })
 
 test('apply 注册了侧栏图标与主面板两个槽位', () => {
-  const mod = loadModule()
+  const { mod } = loadModule()
   const registrations = []
   const localeRegistrations = []
   const cleanups = []
@@ -99,6 +99,48 @@ test('apply 注册了侧栏图标与主面板两个槽位', () => {
   assert.ok(localeRegistrations.length >= 2, '注册了中英文字典')
 
   // 释放路径不能抛
+  for (const cleanup of cleanups.reverse()) cleanup()
+})
+
+test('装了游戏厅时只向游戏厅登记，不再注册独立槽位', () => {
+  const { mod, fakeWindow } = loadModule()
+  const calls = []
+  fakeWindow.__dshArcade = {
+    register(definition) {
+      calls.push(definition)
+      return () => {}
+    },
+  }
+  const registrations = []
+  const cleanups = []
+  const fakeCtx = {
+    effect(fn) {
+      const cleanup = fn()
+      if (typeof cleanup === 'function') cleanups.push(cleanup)
+      return cleanup
+    },
+    get() { return undefined },
+    locale: {
+      register: () => () => {},
+      bind: () => (key) => key,
+      subscribe: () => () => {},
+    },
+    slots: {
+      inject(key, callback) { return callback() },
+      register(options, component) {
+        registrations.push({ slot: options.name, options, component })
+        return () => {}
+      },
+    },
+  }
+  mod.apply(fakeCtx)
+  assert.equal(registrations.length, 0, '游戏厅在时不注册 sidebar/main')
+  assert.equal(calls.length, 1, '向游戏厅登记一次')
+  assert.equal(calls[0].id, 'dsh-2048')
+  assert.equal(calls[0].order, 40)
+  assert.equal(typeof calls[0].Panel, 'function')
+  assert.equal(typeof calls[0].icon, 'function')
+  assert.equal(calls[0].title(), 'nav.label')
   for (const cleanup of cleanups.reverse()) cleanup()
 })
 

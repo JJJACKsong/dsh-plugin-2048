@@ -96,6 +96,8 @@ dsh plugin --profile <profile> add /abs/path/to/dsh-plugin-2048
 
 装完即激活（HMR），侧边栏最下面多一个 **2048** 图标，点开就能玩。
 
+> 如果同时装了 `dsh-plugin-arcade`（小游戏厅），2048 会收进「小游戏」入口里，不再单独占侧栏图标；没装游戏厅时保持原来的独立图标。
+
 > 已装过旧版本升级时：`remove_bundle` 再 `install_bundle`，然后刷新页面（客户端 JS 只有重装/重启才会换新）。
 
 卸载 / 暂停：用插件管理器的开关或 `plugin_manager` 的 `set_bundle` / `remove_bundle`。
