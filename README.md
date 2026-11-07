@@ -8,12 +8,13 @@
 [![platform](https://img.shields.io/badge/platform-web%20ui-e8912a.svg)](#兼容性)
 
 > **English**: A 2048 game for DeepSeek Harness. One sidebar icon opens a full-page board in the main
-> column: **4×4 to 9×9** (boards above 5×5 fold into a "More" menu), arrow keys / WASD / swipe, combo
-> bonuses, **squash-and-stretch tile motion with speed-based motion blur**, undo, sound, a saved game
-> per board size, best scores, recent-game history, achievements, a daily seeded challenge with a
-> copyable result, and an **in-game notice when a session finishes or is waiting on you**. The Host half
-> is an empty `apply()` — no services, no tools, no session writes, no workspace files. UI uses the
-> host's `--dsw-alias-*` theme tokens, so it follows light/dark.
+> column: **4×4 to 9×9** (boards above 5×5 fold into a "More" menu), arrow keys / WASD / swipe,
+> **an AUTO pilot driven by a built-in expectimax AI**, combo bonuses, **squash-and-stretch tile motion
+> with speed-based motion blur**, undo, sound, a saved game per board size, best scores, recent-game
+> history, achievements, a daily seeded challenge with a copyable result, and an **in-game notice when
+> a session finishes or is waiting on you**. The Host half is an empty `apply()` — no services, no
+> tools, no session writes, no workspace files. UI uses the host's `--dsw-alias-*` theme tokens, so it
+> follows light/dark.
 
 ---
 
@@ -73,7 +74,7 @@ dsh 里一个 agent 跑长任务，人只能等。切出去开网页游戏又会
 
 ## 安装
 
-> **版本说明**：最新功能以 [Releases](https://github.com/JJJACKsong/dsh-plugin-2048/releases) 为准（当前 `v0.4.0`）。npm 上的包由发布流程更新，可能落后于仓库；想直接装到最新版，用下面的「从本地目录」。
+> **版本说明**：最新功能以 [Releases](https://github.com/JJJACKsong/dsh-plugin-2048/releases) 为准（当前 `v0.5.0`）。npm 上的包由发布流程更新，可能落后于仓库；想直接装到最新版，用下面的「从本地目录」。
 
 **从 npm**：
 
