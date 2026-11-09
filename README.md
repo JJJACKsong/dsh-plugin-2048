@@ -74,7 +74,7 @@ dsh 里一个 agent 跑长任务，人只能等。切出去开网页游戏又会
 
 ## 安装
 
-> **版本说明**：最新功能以 [Releases](https://github.com/JJJACKsong/dsh-plugin-2048/releases) 为准（当前 `v0.5.0`）。npm 上的包由发布流程更新，可能落后于仓库；想直接装到最新版，用下面的「从本地目录」。
+> **版本说明**：最新功能以 [Releases](https://github.com/JJJACKsong/dsh-plugin-2048/releases) 为准（当前 `v0.5.1`）。npm 上的包由发布流程更新，可能落后于仓库；想直接装到最新版，用下面的「从本地目录」。
 
 **从 npm**：
 
